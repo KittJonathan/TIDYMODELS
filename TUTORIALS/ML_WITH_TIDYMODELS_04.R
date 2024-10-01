@@ -2,8 +2,8 @@
 # POSIT::CONF 2024 WORKSHOPS
 # https://workshops.tidymodels.org/
 # INTRODUCTION TO TIDYMODELS
-# 3 - WHAT MAKES A MODEL?
-# https://workshops.tidymodels.org/slides/intro-03-what-makes-a-model.html#/title-slide
+# 4 - EVALUATING MODELS
+# https://workshops.tidymodels.org/slides/intro-04-evaluating-models.html#/title-slide
 
 # 📦 LOAD PACKAGES --------------------------------------------------------
 
@@ -123,3 +123,48 @@ augment(tree_fit, new_data = forested_test)
 tree_fit |> 
   extract_fit_engine() |> 
   rpart.plot(roundint = FALSE)
+
+# 🔎 LOOKING AT PREDICTIONS -----------------------------------------------
+
+augment(tree_fit, new_data = forested_train)
+
+# 🔎 CONFUSION MATRIX -----------------------------------------------------
+
+augment(tree_fit, new_data = forested_train) |> 
+  conf_mat(truth = forested, estimate = .pred_class)
+
+augment(tree_fit, new_data = forested_train) |> 
+  conf_mat(truth = forested, estimate = .pred_class) |> 
+  autoplot(type = "heatmap")
+
+# 🔎 METRICS FOR MODEL PERFORMANCE ----------------------------------------
+
+augment(tree_fit, new_data = forested_train) |> 
+  accuracy(truth = forested, estimate = .pred_class)
+
+# accuracy = (TP + TN) / (TP + FP + FN + TN)
+
+augment(tree_fit, new_data = forested_train) |> 
+  sensitivity(truth = forested, estimate = .pred_class)
+
+# sensitivity = (TP) / (TP + FN)
+
+augment(tree_fit, new_data = forested_train) |> 
+  specificity(truth = forested, estimate = .pred_class)
+
+# specificity = (TN) / (FP + TN)
+
+forested_metrics <- metric_set(accuracy, specificity, sensitivity)
+
+augment(tree_fit, new_data = forested_train) |> 
+  forested_metrics(truth = forested, estimate = .pred_class)
+
+augment(tree_fit, new_data = forested_train) |> 
+  group_by(tree_no_tree) |> 
+  forested_metrics(truth = forested, estimate = .pred_class)
+
+# 📊 ROC CURVES -----------------------------------------------------------
+
+augment(tree_fit, new_data = forested_train) |> 
+  roc_curve(truth = forested, .pred_Yes) |> 
+  autoplot()
