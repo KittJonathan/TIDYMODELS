@@ -168,3 +168,48 @@ augment(tree_fit, new_data = forested_train) |>
 augment(tree_fit, new_data = forested_train) |> 
   roc_curve(truth = forested, .pred_Yes) |> 
   autoplot()
+
+# 🔎 BRIER SCORE ----------------------------------------------------------
+
+augment(tree_fit, new_data = forested_train) |> 
+  brier_class(truth = forested, .pred_Yes)
+
+# ➗ CROSS-VALIDATION ------------------------------------------------------
+
+vfold_cv(forested_train)
+
+forested_folds <- vfold_cv(forested_train)
+forested_folds$splits[1:3]
+
+vfold_cv(forested_train, v = 5)
+
+set.seed(123)
+forested_folds <- vfold_cv(forested_train, v = 10)
+forested_folds
+
+forested_res <- fit_resamples(tree_wflow, forested_folds)
+forested_res
+
+forested_res |> 
+  collect_metrics()
+
+forested_res |> 
+  collect_metrics() |> 
+  select(.metric, mean, n)
+
+ctrl_forested <- control_resamples(save_pred = TRUE)
+
+forested_res <- fit_resamples(tree_wflow, forested_folds, control = ctrl_forested)
+forested_res
+
+forested_preds <- collect_predictions(forested_res)
+forested_preds
+
+forested_preds |> 
+  group_by(id) |> 
+  forested_metrics(truth = forested, estimate = .pred_class)
+
+# ➗ BOOTSTRAPPING ---------------------------------------------------------
+
+set.seed(3214)
+bootstraps(forested_train)
